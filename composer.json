@@ -6,6 +6,7 @@
         "menu", "laravel", "navigation",
         "authentication", "routing"
     ],
+    "minimum-stability": "dev",
     "authors": [
         {
             "name": "Peter Soots",
