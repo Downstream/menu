@@ -1,0 +1,23 @@
+{
+    "name": "elmdash/menu",
+    "description": "A simple laravel menu structure",
+    "license": "MIT",
+    "keywords": [
+        "menu", "laravel", "navigation",
+        "authentication", "routing"
+    ],
+    "authors": [
+        {
+            "name": "Peter Soots",
+            "email": "psoots@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "ElmDash\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=5.5.9"
+    }
+}
