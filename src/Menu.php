@@ -1,6 +1,6 @@
 <?php
 
-namespace ElmDash;
+namespace ElmDash\Menu;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
