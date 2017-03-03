@@ -11,6 +11,7 @@ class Menu
     protected $params = [];
     protected $depth = 1;
     protected $match = [];
+    protected $name;
     protected $label;
 
     protected $langNamespace;
@@ -22,12 +23,15 @@ class Menu
     protected $parent;
     protected $children = [];
 
-    public function __construct($route = null, Menu $parent = null)
+    public function __construct($name = null, $route = null, Menu $parent = null)
     {
         $this->route = $route;
         if ($parent) {
             $this->parent = $parent;
             $this->depth = $parent->depth + 1;
+        }
+        if ($name) {
+            $this->name = $name;
         }
     }
 
@@ -47,7 +51,7 @@ class Menu
      */
     public function add($route = null, $fn = null)
     {
-        $m = new Menu($route, $this);
+        $m = new Menu(false, $route, $this);
         $this->children[] = $m;
         if ($fn) {
             $fn($m);
@@ -100,7 +104,13 @@ class Menu
             return $this->label;
         }
 
-        $key = "menu.{$this->route}";
+        $keyParts = ['menu'];
+        if ($this->name) {
+            $keyParts[] = $this->name;
+        }
+        $keyParts[] = $this->route;
+
+        $key = implode('.', $keyParts);
 
         $ns = $this->deriveLangNamespace();
         if ($ns) {
