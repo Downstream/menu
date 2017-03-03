@@ -15,11 +15,15 @@
     ],
     "autoload": {
         "psr-4": {
-            "ElmDash\\": "src/"
+            "ElmDash\\": "/src",
+            "ElmDash\\Menu\\Tests": "/tests"
         }
     },
     "require": {
         "php": ">=5.5.9",
         "laravel/framework": "~5.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~6.0"
     }
 }
