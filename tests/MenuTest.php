@@ -4,7 +4,7 @@ namespace ElmDash\Menu\Tests\Cases;
 
 use ElmDash\Menu\Tests\TestCase;
 use ElmDash\Menu\Tests\Mock\MockMenu as Menu;
-use ElmDash\Menu as RealMenu;
+use ElmDash\Menu\Menu as RealMenu;
 
 class MenuTest extends TestCase
 {

@@ -5,7 +5,7 @@ Menus are but a simple tree structure. You can implement them a million ways, bu
 In your provider's boot method add something like:
 
 ```
-$m = new \ElmDash\Menu();
+$m = new \ElmDash\Menu\Menu('top');
 
 // a login route, only visible to guests
 $m->add('access')->guests();
@@ -65,10 +65,14 @@ Labels are set in `lang/menu.php`:
 <?php
 
 return [
+  'top' => [
     'access'       => 'Sign up or sign in',
-    'account.edit' => 'Settings',
-    'event.create' => 'Create an event',
+    'account-edit' => 'Settings',
+    'event-create' => 'Create an event',
     'logout'       => 'Sign out',
+  ],
 ];
-
 ```
+
+Notice that the translation keys are the menu items' route names but with dashes instead of periods. Also, notice that the top-level name of the menu is used to group the translations. 
+

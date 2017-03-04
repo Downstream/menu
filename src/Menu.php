@@ -1,20 +1,19 @@
 <?php
 
-namespace ElmDash;
+namespace ElmDash\Menu;
 
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
 
 class Menu
 {
-    protected $route;
-    protected $params = [];
-    protected $depth = 1;
-    protected $match = [];
     protected $name;
+    protected $params = [];
     protected $label;
-
     protected $langNamespace;
+    protected $flags = [];
+
+    /** @var Route */
+    protected $route;
 
     // require authentication by default
     protected $protected = true;
@@ -22,11 +21,21 @@ class Menu
     /** @var Menu */
     protected $parent;
     protected $children = [];
+    protected $depth = 1;
 
+    protected $activeCache;
+
+    /**
+     * Create a new menu item
+     *
+     * @param string $name Top-level only name of menu
+     * @param string $route Name of route to render
+     * @param Menu $parent
+     */
     public function __construct($name = null, $route = null, Menu $parent = null)
     {
-        $this->route = $route;
         if ($parent) {
+            $this->route = new Route($route);
             $this->parent = $parent;
             $this->depth = $parent->depth + 1;
         }
@@ -35,6 +44,13 @@ class Menu
         }
     }
 
+    /**
+     * Get all the visible children for this menu item
+     * You should only call this in the request cycle,
+     * NOT from a service provider.
+     *
+     * @return array
+     */
     public function children()
     {
         return array_filter($this->children, function (Menu $m) {
@@ -62,14 +78,26 @@ class Menu
     /**
      * Generates a URL for this item
      *
+     * @param bool $absolute
      * @return string
      */
-    public function href()
+    public function href($absolute = false)
     {
-        if (!$this->route) {
-            return '#';
+        return $this->route->href($absolute);
+    }
+
+    /**
+     * Check if this item has a flag
+     *
+     * @param string|array $flags
+     * @return bool
+     */
+    public function is($flags)
+    {
+        if (!is_array($flags)) {
+            $flags = [$flags];
         }
-        return route($this->route, $this->params);
+        return !empty(array_intersect($this->flags, $flags));
     }
 
     /**
@@ -90,10 +118,10 @@ class Menu
     /**
      * Set or get the label
      *
-     * @param bool $label
+     * @param string $label
      * @return $this|string
      */
-    public function label($label = false)
+    public function label($label = null)
     {
         if ($label) {
             $this->label = $label;
@@ -105,10 +133,11 @@ class Menu
         }
 
         $keyParts = ['menu'];
-        if ($this->name) {
-            $keyParts[] = $this->name;
+        $name = $this->root()->name;
+        if ($name) {
+            $keyParts[] = $name;
         }
-        $keyParts[] = $this->route;
+        $keyParts[] = str_replace('.', '-', $this->route->getName());
 
         $key = implode('.', $keyParts);
 
@@ -120,24 +149,54 @@ class Menu
         return trans($key);
     }
 
-    public function route($route = false)
+    /**
+     * Get or set the route for this menu item
+     *
+     * @param string $route
+     * @return Menu|string
+     */
+    public function route($route = null)
     {
         if ($route) {
-            $this->route = $route;
+            $this->route = new Route($route);
             return $this;
         }
         return $this->route;
     }
 
     /**
-     * Adds params for generating the route
+     * Adds param values for generating the route.
+     *
+     * example:
+     * // route = /blog/post/list/{type}
+     * $menu->add('post.list')->params(['type' => 'featured']);
      *
      * @param array $params
      * @return $this
      */
-    public function params($params = [])
+    public function params($params = [], $replace = false)
     {
-        $this->params = $params;
+        $this->route->params($params, $replace);
+        return $this;
+    }
+
+    /**
+     * Set flags for checking items in the view later with is().
+     *
+     * @param array $flags
+     * @param bool $replace
+     * @return $this
+     */
+    public function flags($flags = [], $replace = false)
+    {
+        if (!is_array($flags)) {
+            $flags = [$flags];
+        }
+        if ($replace) {
+            $this->flags = $flags;
+            return $this;
+        }
+        $this->flags = array_merge($this->flags, $flags);
         return $this;
     }
 
@@ -150,7 +209,7 @@ class Menu
      */
     public function guests($bool = true)
     {
-        $this->protected = ! $bool;
+        $this->protected = !$bool;
         return $this;
     }
 
@@ -159,35 +218,15 @@ class Menu
      * be considered active. If params have been
      * provided, those params will also need to match.
      *
-     * Possible values:
-     * - "users.*" (will not match "users", but matches "users.anything")
-     * - "users.settings.*|account|account.edit.*"
-     * - "/^users\.account\..*$/"
-     *
      * @param string $glob
      * @param string $delim If using a real regex, specify delim here
      * @return $this
      */
-    public function match($glob, $delim = '/')
+    public function activeFor($glob, $delim = '/')
     {
-        static $match = ['.', '*',];
-        static $replace = ['\.', '.*',];
-
-        $patterns = explode('|', $glob);
-        $regexes = [];
-
-        foreach ($patterns as $pattern) {
-            if (starts_with($pattern, $delim)) {
-                $regexes[] = $pattern;
-                continue;
-            }
-            $regex = '/^' . str_replace($match, $replace, $pattern) . '$/';
-            $regexes[] = $regex;
-        }
-        $this->match = $regexes;
+        $this->route->activeFor($glob, $delim);
         return $this;
     }
-
 
     /**
      * Determines if this item is active
@@ -196,33 +235,20 @@ class Menu
      */
     public function isActive()
     {
-        /** @var \Illuminate\Routing\Route $routeObj */
-        $routeObj = Route::current();
-        $currentRouteName = $routeObj->getName();
-        $currentRouteParams = $routeObj->parameters() ?? [];
-
-        $paramsMatch = false;
-        $namesMatch = $currentRouteName == $this->route;
-
-        if (!empty($currentRouteParams) && !empty($this->routeParams)) {
-            $paramsMatch = empty(array_diff_assoc($this->routeParams, $routeObj->parameters()));
-        } else if (empty($currentRouteParams) && empty($this->routeParams)) {
-            $paramsMatch = true;
+        if ($this->activeCache === null) {
+            $this->activeCache = $this->route->isActive();
         }
-
-        if (!$namesMatch) {
-            foreach ($this->match as $regex) {
-                if (preg_match($regex, $currentRouteName)) {
-                    $namesMatch = true;
-                    break;
-                }
-            }
-        }
-
-        return $namesMatch && $paramsMatch;
-
+        return $this->activeCache;
     }
 
+    /**
+     * Items are visible by default. If an item is
+     * marked as guests-only, it will be hidden if the
+     * user is logged in. Items are also hidden if all
+     * their children are hidden.
+     *
+     * @return bool
+     */
     protected function isVisible()
     {
         $loggedIn = Auth::check();
@@ -231,6 +257,10 @@ class Menu
         }
 
         if (!$this->protected && $loggedIn) {
+            return false;
+        }
+
+        if (!$this->route->isValid()) {
             return false;
         }
 
@@ -243,6 +273,13 @@ class Menu
         return true;
     }
 
+
+    /**
+     * Gets namespace set on this item or look for the namespace
+     * up the tree of parents.
+     *
+     * @return bool|string
+     */
     protected function deriveLangNamespace()
     {
         if ($this->langNamespace) {
@@ -252,5 +289,13 @@ class Menu
             return $this->parent->deriveLangNamespace();
         }
         return false;
+    }
+
+    protected function root()
+    {
+        if (!$this->parent) {
+            return $this;
+        }
+        return $this->parent->root();
     }
 }
