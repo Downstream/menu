@@ -11,6 +11,7 @@ class Menu
     protected $label;
     protected $langNamespace;
     protected $flags = [];
+    protected $cans = [];
 
     /** @var Route */
     protected $route;
@@ -69,6 +70,23 @@ class Menu
     {
         $m = new Menu(false, $route, $this);
         $this->children[] = $m;
+        if ($fn) {
+            $fn($m);
+        }
+        return $m;
+    }
+
+    /**
+     * Adds an item to this menu
+     *
+     * @param string $route
+     * @param \Closure|null $fn
+     * @return Menu
+     */
+    public function prepend($route = null, $fn = null)
+    {
+        $m = new Menu(false, $route, $this);
+        array_unshift($this->children, $m);
         if ($fn) {
             $fn($m);
         }
@@ -201,6 +219,17 @@ class Menu
     }
 
     /**
+     * @param string $action
+     * @param null|string $model
+     * @return $this
+     */
+    public function can($action, $model = null)
+    {
+        $this->cans[$action] = $model;
+        return $this;
+    }
+
+    /**
      * If true, this item will only be visible if the
      * user has not been authenticated.
      *
@@ -262,6 +291,15 @@ class Menu
 
         if (!$this->route->isValid()) {
             return false;
+        }
+
+        if (!empty($this->cans)) {
+            $user = Auth::user();
+            foreach ($this->cans as $action => $model) {
+                if (!$user->can($action, $model)) {
+                    return false;
+                }
+            }
         }
 
         // if we have children, but none are visible,
