@@ -68,8 +68,12 @@ class Menu
      */
     public function hasActiveChildren()
     {
+        if ($this->isActive()) {
+            return true;
+        }
+
         foreach ($this->children as $child) {
-            if ($this->isActive() || $child->hasActiveChildren()) {
+            if ($child->hasActiveChildren()) {
                 return true;
             }
         }
