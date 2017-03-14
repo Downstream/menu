@@ -9,6 +9,8 @@ class Menu
     protected $name;
     protected $params = [];
     protected $label;
+    protected $labelKey;
+    protected $groupName;
     protected $langNamespace;
     protected $flags = [];
     protected $cans = [];
@@ -60,6 +62,22 @@ class Menu
     }
 
     /**
+     * Check if any descendents are active
+     *
+     * @return bool
+     */
+    public function hasActiveChildren()
+    {
+        foreach ($this->children as $child) {
+            if ($this->isActive() || $child->hasActiveChildren()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Adds an item to this menu
      *
      * @param string $route
@@ -94,6 +112,24 @@ class Menu
     }
 
     /**
+     * Create a new group
+     *
+     * @param string $groupName
+     * @param \Closure|null $fn
+     * @return Menu
+     */
+    public function group($groupName, $fn = null)
+    {
+        $m = new Menu(false, false, $this);
+        $m->groupName = $groupName;
+        if ($fn) {
+            $fn($m);
+        }
+
+        return $m;
+    }
+
+    /**
      * Generates a URL for this item
      *
      * @param bool $absolute
@@ -101,6 +137,10 @@ class Menu
      */
     public function href($absolute = false)
     {
+        if (!$this->route) {
+            throw new \LogicException("No route has been defined for this menu item.");
+        }
+
         return $this->route->href($absolute);
     }
 
@@ -134,6 +174,21 @@ class Menu
     }
 
     /**
+     * Set or get the translation key for this label
+     *
+     * @param string $labelKey
+     * @return $this|string
+     */
+    public function labelKey($labelKey = null)
+    {
+        if ($labelKey) {
+            $this->labelKey = $labelKey;
+            return $this;
+        }
+        return $this->labelKey;
+    }
+
+    /**
      * Set or get the label
      *
      * @param string $label
@@ -150,12 +205,26 @@ class Menu
             return $this->label;
         }
 
+        if ($this->labelKey) {
+            return trans($this->labelKey);
+        }
+
         $keyParts = ['menu'];
         $name = $this->root()->name;
         if ($name) {
             $keyParts[] = $name;
         }
-        $keyParts[] = str_replace('.', '-', $this->route->getName());
+
+        $identifier = $this->groupName;
+        if ($this->route) {
+            $identifier = str_replace('.', '-', $this->route->getName());
+        }
+
+        if (!$identifier) {
+            throw new \LogicException("Cannot determine label for menu item. Please provide a route, an explicit label, or label key for translation.");
+        }
+
+        $keyParts[] = $identifier;
 
         $key = implode('.', $keyParts);
 
@@ -265,7 +334,11 @@ class Menu
     public function isActive()
     {
         if ($this->activeCache === null) {
-            $this->activeCache = $this->route->isActive();
+            if (!$this->route) {
+                $this->activeCache = false;
+            } else {
+                $this->activeCache = $this->route->isActive();
+            }
         }
         return $this->activeCache;
     }
@@ -278,7 +351,7 @@ class Menu
      *
      * @return bool
      */
-    protected function isVisible()
+    public function isVisible()
     {
         $loggedIn = Auth::check();
         if ($this->protected && !$loggedIn) {
@@ -289,7 +362,7 @@ class Menu
             return false;
         }
 
-        if (!$this->route->isValid()) {
+        if ($this->route && !$this->route->isValid()) {
             return false;
         }
 
