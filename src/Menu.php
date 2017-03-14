@@ -245,18 +245,15 @@ class Menu
             return $this->label;
         }
 
-        if ($this->labelKey) {
-            return trans($this->labelKey);
-        }
-
         $keyParts = ['menu'];
         $name = $this->root()->name;
         if ($name) {
             $keyParts[] = $name;
         }
 
-        $identifier = $this->groupName;
-        if ($this->route) {
+        $identifier = $this->labelKey ?? $this->groupName;
+
+        if (!$identifier && $this->route) {
             $identifier = str_replace('.', '-', $this->route->getName());
         }
 
