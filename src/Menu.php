@@ -62,6 +62,21 @@ class Menu
     }
 
     /**
+     * Get direct child that's active
+     *
+     * @return mixed|null
+     */
+    public function activeChild()
+    {
+        foreach ($this->children as $child) {
+            if ($child->hasActiveChildren()) {
+                return $child;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Check if any descendents are active
      *
      * @return bool
@@ -126,6 +141,27 @@ class Menu
     {
         $m = new Menu(false, false, $this);
         $m->groupName = $groupName;
+        $m->route = null;
+        $this->children[] = $m;
+        if ($fn) {
+            $fn($m);
+        }
+
+        return $m;
+    }
+
+    /**
+     * Create a new group
+     *
+     * @param string $groupName
+     * @param \Closure|null $fn
+     * @return Menu
+     */
+    public function prependGroup($groupName, $fn = null)
+    {
+        $m = new Menu(false, false, $this);
+        $m->groupName = $groupName;
+        array_unshift($this->children, $m);
         if ($fn) {
             $fn($m);
         }
@@ -367,7 +403,8 @@ class Menu
         }
 
         if ($this->route && !$this->route->isValid()) {
-            return false;
+            $name = $this->route->getName();
+            throw new \LogicException("Route is invalid: '$name'");
         }
 
         if (!empty($this->cans)) {
