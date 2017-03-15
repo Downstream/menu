@@ -69,7 +69,7 @@ class Menu
     public function activeChild()
     {
         foreach ($this->children as $child) {
-            if ($child->hasActiveChildren()) {
+            if ($child->isActive()) {
                 return $child;
             }
         }
@@ -77,18 +77,18 @@ class Menu
     }
 
     /**
-     * Check if any descendents are active
+     * Check if this or any descendents are active
      *
      * @return bool
      */
-    public function hasActiveChildren()
+    public function isActive()
     {
-        if ($this->isActive()) {
+        if ($this->hasActiveRoute()) {
             return true;
         }
 
         foreach ($this->children as $child) {
-            if ($child->hasActiveChildren()) {
+            if ($child->isActive()) {
                 return true;
             }
         }
@@ -364,23 +364,6 @@ class Menu
     }
 
     /**
-     * Determines if this item is active
-     *
-     * @return bool
-     */
-    public function isActive()
-    {
-        if ($this->activeCache === null) {
-            if (!$this->route) {
-                $this->activeCache = false;
-            } else {
-                $this->activeCache = $this->route->isActive();
-            }
-        }
-        return $this->activeCache;
-    }
-
-    /**
      * Items are visible by default. If an item is
      * marked as guests-only, it will be hidden if the
      * user is logged in. Items are also hidden if all
@@ -422,6 +405,23 @@ class Menu
         return true;
     }
 
+    /**
+     * Determines if this item is active
+     *
+     * @return bool
+     */
+    protected function hasActiveRoute()
+    {
+        if ($this->activeCache === null) {
+            if (!$this->route) {
+                $this->activeCache = false;
+            } else {
+                $this->activeCache = $this->route->isActive();
+            }
+        }
+        return $this->activeCache;
+    }
+
 
     /**
      * Gets namespace set on this item or look for the namespace
@@ -448,3 +448,4 @@ class Menu
         return $this->parent->root();
     }
 }
+
