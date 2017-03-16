@@ -62,13 +62,12 @@ class Route
         $currentRouteName = $routeObj->getName();
         $currentRouteParams = $routeObj->parameters() ?? [];
 
-        $paramsMatch = false;
+        $paramsMatch = true;
         $namesMatch = $currentRouteName == $this->route;
 
-        if (!empty($currentRouteParams) && !empty($this->params)) {
-            $paramsMatch = empty(array_diff_assoc($this->params, $routeObj->parameters()));
-        } else if (empty($currentRouteParams) && empty($this->params)) {
-            $paramsMatch = true;
+        // only check params if they are part of our route definition
+        if (!empty($this->params)) {
+            $paramsMatch = empty(array_diff_assoc($this->params, $currentRouteParams));
         }
 
         if (!$namesMatch && $this->activeGlob) {
