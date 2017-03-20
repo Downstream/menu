@@ -84,16 +84,9 @@ class Route
 
     public function isValid()
     {
-        /** @var \Illuminate\Routing\Route $ourRouteObj */
-        $routes = Router::getRoutes();
-        $ourRouteObj = $routes->getByName($this->route);
+        $ourRouteObj = Router::getRoutes()->getByName($this->route);
         if (!$ourRouteObj) {
             return false;
-        }
-        if ($ourRouteObj->hasParameters()) {
-            $ourRouteParams = $ourRouteObj->parameters() ?? [];
-
-            // todo verify parameters
         }
 
         return true;
@@ -108,11 +101,14 @@ class Route
     {
         /** @var \Illuminate\Routing\Route $routeObj */
         $routeObj = Router::current();
+        $ourRouteObj = Router::getRoutes()->getByName($this->route);
         $currentRouteParams = [];
         if ($routeObj->hasParameters()) {
             $currentRouteParams = $routeObj->parameters();
         }
 
-        return array_merge($this->params, $currentRouteParams);
+        $allowed = array_only($currentRouteParams, $ourRouteObj->parameterNames());
+
+        return array_merge($allowed, $this->params);
     }
 }
