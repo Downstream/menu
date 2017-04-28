@@ -62,19 +62,26 @@ class Route
         $currentRouteName = $routeObj->getName();
         $currentRouteParams = $routeObj->parameters() ?? [];
 
-        $paramsMatch = true;
-        $namesMatch = $currentRouteName == $this->route;
-
-        // only check params if they are part of our route definition
-        if (!empty($this->params)) {
-            $paramsMatch = empty(array_diff_assoc($this->params, $currentRouteParams));
+        // at a minimum the name must match
+        if ($currentRouteName != $this->route) {
+            if (!$this->activeGlob) {
+                return false;
+            }
+            if (!$this->activeGlob->match($currentRouteName)) {
+                return false;
+            }
         }
 
-        if (!$namesMatch && $this->activeGlob) {
-            $namesMatch = $this->activeGlob->match($currentRouteName);
+        if (empty($this->params)) {
+            return true;
         }
 
-        return $namesMatch && $paramsMatch;
+        // compare apples to apples to allow optional params (i.e. ['param1' => null])
+        $requiredParams = array_keys($this->params);
+        $default = array_fill_keys($requiredParams, null);
+        $relevantCurrentParams = array_only($currentRouteParams, $requiredParams);
+        $currentParams = array_merge($default, $relevantCurrentParams);
+        return $currentParams == $this->params;
     }
 
     public function activeFor($glob, $delim = '/')
