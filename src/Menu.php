@@ -261,6 +261,10 @@ class Menu
             throw new \LogicException("Cannot determine label for menu item. Please provide a route, an explicit label, or label key for translation.");
         }
 
+        if (strpos($identifier, '::')) {
+            return trans($identifier);
+        }
+        
         $keyParts[] = $identifier;
 
         $key = implode('.', $keyParts);
