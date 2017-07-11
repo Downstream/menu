@@ -25,6 +25,7 @@ class Menu
     protected $parent;
     protected $children = [];
     protected $depth = 1;
+    protected $deferred = [];
 
     protected $activeCache;
 
@@ -56,6 +57,7 @@ class Menu
      */
     public function children()
     {
+        $this->load();
         return array_filter($this->children, function (Menu $m) {
             return $m->isVisible();
         });
@@ -68,6 +70,7 @@ class Menu
      */
     public function activeChild()
     {
+        $this->load();
         foreach ($this->children as $child) {
             if ($child->isActive()) {
                 return $child;
@@ -83,6 +86,7 @@ class Menu
      */
     public function isActive()
     {
+        $this->load();
         if ($this->hasActiveRoute()) {
             return true;
         }
@@ -108,7 +112,7 @@ class Menu
         $m = new Menu(false, $route, $this);
         $this->children[] = $m;
         if ($fn) {
-            $fn($m);
+            $this->defer($fn, $m);
         }
         return $m;
     }
@@ -125,7 +129,7 @@ class Menu
         $m = new Menu(false, $route, $this);
         array_unshift($this->children, $m);
         if ($fn) {
-            $fn($m);
+            $this->defer($fn, $m);
         }
         return $m;
     }
@@ -144,7 +148,7 @@ class Menu
         $m->route = null;
         $this->children[] = $m;
         if ($fn) {
-            $fn($m);
+            $this->defer($fn, $m);
         }
 
         return $m;
@@ -163,7 +167,7 @@ class Menu
         $m->groupName = $groupName;
         array_unshift($this->children, $m);
         if ($fn) {
-            $fn($m);
+            $this->defer($fn, $m);
         }
 
         return $m;
@@ -264,7 +268,7 @@ class Menu
         if (strpos($identifier, '::')) {
             return trans($identifier);
         }
-        
+
         $keyParts[] = $identifier;
 
         $key = implode('.', $keyParts);
@@ -426,6 +430,28 @@ class Menu
         return $this->activeCache;
     }
 
+    /**
+     * Create a new group
+     *
+     * @param \Closure $fn
+     * @param Menu $m
+     */
+    protected function defer(\Closure $fn, Menu $m)
+    {
+        $this->deferred[] = function () use ($fn, $m) {
+            $fn($m);
+            return $m;
+        };
+    }
+
+    protected function load()
+    {
+        foreach ($this->deferred as $key => $fn) {
+            $m = $fn();
+            $m->load();
+            unset($this->deferred[$key]);
+        }
+    }
 
     /**
      * Gets namespace set on this item or look for the namespace
