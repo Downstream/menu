@@ -8,8 +8,8 @@ class Route
 {
     protected $route;
     protected $params = [];
-    /** @var Glob */
-    protected $activeGlob;
+    /** @var Glob[] */
+    protected $activeGlobs = [];
 
     public function __construct($name)
     {
@@ -64,10 +64,17 @@ class Route
 
         // at a minimum the name must match
         if ($currentRouteName != $this->route) {
-            if (!$this->activeGlob) {
+            if (empty($this->activeGlobs)) {
                 return false;
             }
-            if (!$this->activeGlob->match($currentRouteName)) {
+            $matchesAGlob = false;
+            foreach ($this->activeGlobs as $glob) {
+                if ($glob->match($currentRouteName)) {
+                    $matchesAGlob = true;
+                    break;
+                }
+            }
+            if (!$matchesAGlob) {
                 return false;
             }
         }
@@ -86,7 +93,7 @@ class Route
 
     public function activeFor($glob, $delim = '/')
     {
-        $this->activeGlob = new Glob($glob, $delim);
+        $this->activeGlobs[] = new Glob($glob, $delim);
     }
 
     public function isValid()
