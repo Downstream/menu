@@ -372,6 +372,19 @@ class Menu
     }
 
     /**
+     * Extract params from the URL or wherever to be used
+     * when determining if this route is active
+     *
+     * @param \Closure $fn
+     * @return $this
+     */
+    public function extractParams($fn)
+    {
+        $this->route->extractParams($fn);
+        return $this;
+    }
+
+    /**
      * Items are visible by default. If an item is
      * marked as guests-only, it will be hidden if the
      * user is logged in. Items are also hidden if all

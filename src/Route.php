@@ -10,6 +10,10 @@ class Route
     protected $params = [];
     /** @var Glob[] */
     protected $activeGlobs = [];
+    /** @var \Closure */
+    protected $extractor;
+    // static result of extraction
+    protected static $extracted = null;
 
     public function __construct($name)
     {
@@ -34,6 +38,19 @@ class Route
         } else {
             $this->params = array_merge($this->params, $params);
         }
+    }
+
+    /**
+     * @param \Closure $fn
+     */
+    public function extractParams($fn)
+    {
+        $this->extractor = function ($currentParams) use ($fn) {
+            if (static::$extracted === null) {
+                static::$extracted = $fn($currentParams);
+            }
+            return static::$extracted;
+        };
     }
 
     /**
@@ -81,6 +98,14 @@ class Route
 
         if (empty($this->params)) {
             return true;
+        }
+
+        if ($this->extractor) {
+            $fn = $this->extractor;
+            $moreParams = $fn($currentRouteParams);
+            if (is_array($moreParams)) {
+                $currentRouteParams = array_merge($currentRouteParams, $moreParams);
+            }
         }
 
         // compare apples to apples to allow optional params (i.e. ['param1' => null])

@@ -174,6 +174,27 @@ $menu->add('my.route.type', function (Menu $m) {
 });
 ```
 
+The params used to find a match are just the params defined on the route. To add finer control, you can extract these params yourself. The result is cached so it will only get called once. For example, you may need to get a param value from a different route parameter (like during an edit route).
+
+```php
+foreach ($contexts as $ctx) {
+    // list by context (i.e. /media/{context})
+    $m->add('media.index')
+        ->params(['context' => $ctx->handle])
+        ->activeFor('media.*')
+        
+        // get the context from the media when editing that media 
+        // (i.e. /media/item/{media}/edit)
+        ->extractParams(function ($currentParams) {
+            $media = array_get($currentParams, $media);
+            if ($media) {
+                return ['context' => $media->context->handle];
+            }
+            return [];
+        });
+}
+```
+
 Getting the URL to render in your view is simply like this:
 
 ```twig 
