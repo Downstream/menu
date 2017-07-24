@@ -444,6 +444,11 @@ class Menu
             return false;
         }
 
+        // if we're just a group with no children, don't render
+        if ($this->groupName && empty($this->children)) {
+            return false;
+        }
+
         return true;
     }
 
