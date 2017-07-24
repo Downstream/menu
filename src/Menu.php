@@ -255,11 +255,7 @@ class Menu
             $keyParts[] = $name;
         }
 
-        $identifier = $this->labelKey ?? $this->groupName;
-
-        if (!$identifier && $this->route) {
-            $identifier = str_replace('.', '-', $this->route->getName());
-        }
+        $identifier = $this->identifier();
 
         if (!$identifier) {
             throw new \LogicException("Cannot determine label for menu item. Please provide a route, an explicit label, or label key for translation.");
@@ -279,6 +275,31 @@ class Menu
         }
 
         return trans($key);
+    }
+
+    public function slug()
+    {
+        static $count = 0;
+        if ($this->label) {
+            return str_slug($this->label);
+        }
+
+        $identifier = $this->identifier();
+        if ($identifier) {
+            return str_slug($identifier);
+        }
+        return "menu-item-{$count}";
+    }
+
+    protected function identifier()
+    {
+        $identifier = $this->labelKey ?? $this->groupName;
+
+        if (!$identifier && $this->route) {
+            $identifier = str_replace('.', '-', $this->route->getName());
+        }
+
+        return $identifier;
     }
 
     /**
