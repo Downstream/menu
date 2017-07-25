@@ -218,6 +218,19 @@ class Menu
     }
 
     /**
+     * @param string $name
+     * @return string|Menu
+     */
+    public function name($name = null)
+    {
+        if ($name) {
+            $this->name = $name;
+            return $this;
+        }
+        return $this->name;
+    }
+
+    /**
      * Set or get the translation key for this label
      *
      * @param string $labelKey
@@ -280,6 +293,10 @@ class Menu
     public function slug()
     {
         static $count = 0;
+        if ($this->name) {
+            return str_slug($this->name);
+        }
+
         if ($this->label) {
             return str_slug($this->label);
         }
