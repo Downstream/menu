@@ -469,6 +469,11 @@ class Menu
         return true;
     }
 
+    public function isGroup()
+    {
+        return (bool) $this->groupName;
+    }
+
     /**
      * Determines if this item is active
      *
