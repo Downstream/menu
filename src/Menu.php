@@ -182,7 +182,7 @@ class Menu
     public function href($absolute = false)
     {
         if (!$this->route) {
-            throw new \LogicException("No route has been defined for this menu item.");
+            throw new \LogicException("No route has been defined for this menu item: '{$this->slug()}'");
         }
 
         return $this->route->href($absolute);
