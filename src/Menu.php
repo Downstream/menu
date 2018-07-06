@@ -173,6 +173,23 @@ class Menu
         return $m;
     }
 
+    public function find($name)
+    {
+        if ($this->isGroup() && $this->groupName == $name) {
+            return $this;
+        }
+        if ($this->route && $this->route->getName() == $name) {
+            return $this;
+        }
+        foreach ($this->children as $m) {
+            $found = $m->find($name);
+            if ($found) {
+                return $found;
+            }
+        }
+        return null;
+    }
+
     /**
      * Generates a URL for this item
      *
