@@ -2,6 +2,7 @@
 
 namespace ElmDash\Menu;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route as Router;
 
 class Route
@@ -113,7 +114,9 @@ class Route
         $default = array_fill_keys($requiredParams, null);
         $relevantCurrentParams = array_only($currentRouteParams, $requiredParams);
         $currentParams = array_merge($default, $relevantCurrentParams);
-        return $currentParams == $this->params;
+        $ourParams = static::reduceParamValues($this->params);
+        $givenParams = static::reduceParamValues($currentParams);
+        return $givenParams == $ourParams;
     }
 
     public function activeFor($glob, $delim = '/')
@@ -129,6 +132,19 @@ class Route
         }
 
         return true;
+    }
+
+    protected static function reduceParamValues($params)
+    {
+        return array_map(function ($item) {
+            if (!$item) {
+                return $item;
+            }
+            if ($item instanceof Model) {
+                return $item->getRouteKey();
+            }
+            return $item;
+        }, $params);
     }
 
     /**
