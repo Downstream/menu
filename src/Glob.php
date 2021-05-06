@@ -2,6 +2,8 @@
 
 namespace ElmDash\Menu;
 
+use Illuminate\Support\Str;
+
 class Glob
 {
     protected $regexes = [];
@@ -26,7 +28,7 @@ class Glob
         $patterns = is_array($glob) ? $glob : explode('|', $glob);
 
         foreach ($patterns as $pattern) {
-            if (starts_with($pattern, $delim)) {
+            if (Str::startsWith($pattern, $delim)) {
                 $this->regexes[] = $pattern;
                 continue;
             }

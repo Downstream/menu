@@ -4,6 +4,7 @@ namespace ElmDash\Menu;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route as Router;
+use Illuminate\Support\Arr;
 
 class Route
 {
@@ -112,7 +113,7 @@ class Route
         // compare apples to apples to allow optional params (i.e. ['param1' => null])
         $requiredParams = array_keys($this->params);
         $default = array_fill_keys($requiredParams, null);
-        $relevantCurrentParams = array_only($currentRouteParams, $requiredParams);
+        $relevantCurrentParams = Arr::only($currentRouteParams, $requiredParams);
         $currentParams = array_merge($default, $relevantCurrentParams);
         $ourParams = static::reduceParamValues($this->params);
         $givenParams = static::reduceParamValues($currentParams);
@@ -162,7 +163,7 @@ class Route
             $currentRouteParams = $routeObj->parameters();
         }
 
-        $allowed = array_only($currentRouteParams, $ourRouteObj->parameterNames());
+        $allowed = Arr::only($currentRouteParams, $ourRouteObj->parameterNames());
 
         return array_merge($allowed, $this->params);
     }

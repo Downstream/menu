@@ -3,6 +3,7 @@
 namespace ElmDash\Menu;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class Menu
 {
@@ -311,16 +312,16 @@ class Menu
     {
         static $count = 0;
         if ($this->name) {
-            return str_slug($this->name);
+            return Str::slug($this->name);
         }
 
         if ($this->label) {
-            return str_slug($this->label);
+            return Str::slug($this->label);
         }
 
         $identifier = $this->identifier();
         if ($identifier) {
-            return str_slug($identifier);
+            return Str::slug($identifier);
         }
         return "menu-item-{$count}";
     }
